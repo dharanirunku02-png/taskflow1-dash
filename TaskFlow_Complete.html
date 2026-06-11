@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TaskFlow — Complete Project</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0f1117; --surface: #1a1d27; --surface2: #22263a; --border: #2e3248;
+      --text: #e8eaf0; --muted: #7b82a0; --accent: #6c63ff; --accent-light: #8b85ff;
+      --accent-dim: rgba(108,99,255,0.15); --green: #22c55e; --green-dim: rgba(34,197,94,0.15);
+      --yellow: #f59e0b; --yellow-dim: rgba(245,158,11,0.15); --red: #ef4444;
+      --red-dim: rgba(239,68,68,0.15); --blue: #3b82f6; --blue-dim: rgba(59,130,246,0.15);
+    }
+    body { font-family: 'Space Grotesk', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+
+    /* ── DOWNLOAD BANNER ── */
+    #dl-banner {
+      background: linear-gradient(90deg, #6c63ff, #22c55e);
+      padding: 0.6rem 1.5rem; display: flex; align-items: center;
+      justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+    }
+    #dl-banner span { font-size: 0.85rem; font-weight: 600; color: white; }
+    .dl-btn {
+      background: white; color: #6c63ff; border: none; padding: 0.4rem 1.1rem;
+      border-radius: 20px; font-size: 0.8rem; font-weight: 700; cursor: pointer;
+      display: flex; align-items: center; gap: 0.4rem; transition: transform 0.15s;
+    }
+    .dl-btn:hover { transform: scale(1.04); }
+
+    /* ── AUTH ── */
+    #auth-screen {
+      min-height: calc(100vh - 40px); display: flex; align-items: center; justify-content: center;
+      background: radial-gradient(ellipse at 60% 20%, rgba(108,99,255,0.18) 0%, transparent 60%),
+                  radial-gradient(ellipse at 10% 80%, rgba(34,197,94,0.1) 0%, transparent 50%), var(--bg);
+      padding: 1.5rem;
+    }
+    .auth-card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 2.5rem; width: 100%; max-width: 420px; box-shadow: 0 24px 64px rgba(0,0,0,0.5); }
+    .auth-logo { font-size: 1.6rem; font-weight: 700; margin-bottom: 0.25rem; }
+    .auth-logo span { color: var(--accent); }
+    .auth-tagline { color: var(--muted); font-size: 0.875rem; margin-bottom: 2rem; }
+    .tab-row { display: flex; background: var(--bg); border-radius: 10px; padding: 4px; margin-bottom: 1.75rem; }
+    .tab-btn { flex: 1; padding: 0.55rem; border: none; background: transparent; color: var(--muted); font-family: 'Space Grotesk', sans-serif; font-size: 0.875rem; font-weight: 600; border-radius: 7px; cursor: pointer; transition: all 0.2s; }
+    .tab-btn.active { background: var(--accent); color: white; }
+    .field { margin-bottom: 1rem; }
+    .field label { display: block; font-size: 0.75rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 0.4rem; }
+    .field input { width: 100%; padding: 0.7rem 1rem; background: var(--bg); border: 1.5px solid var(--border); border-radius: 9px; color: var(--text); font-family: 'Space Grotesk', sans-serif; font-size: 0.9rem; outline: none; transition: border-color 0.2s; }
+    .field input:focus { border-color: var(--accent); }
+    .auth-submit { width: 100%; padding: 0.8rem; background: var(--accent); color: white; border: none; border-radius: 9px; font-family: 'Space Grotesk', sans-serif; font-size: 0.95rem; font-weight: 700; cursor: pointer; margin-top: 0.5rem; transition: background 0.2s, transform 0.15s; }
+    .auth-submit:hover { background: var(--accent-light); transform: translateY(-1px); }
+
+    /* ── APP SHELL ── */
+    #app-screen { display: none; min-height: 100vh; }
+    .sidebar { position: fixed; left: 0; top: 40px; bottom: 0; width: 240px; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 50; transition: transform 0.3s; }
+    .sidebar-logo { padding: 1.5rem 1.25rem 1rem; font-size: 1.3rem; font-weight: 700; border-bottom: 1px solid var(--border); }
+    .sidebar-logo span { color: var(--accent); }
+    .sidebar-user { padding: 1rem 1.25rem; display: flex; align-items: center; gap: 0.75rem; border-bottom: 1px solid var(--border); }
+    .avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--accent-dim); border: 2px solid var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.875rem; color: var(--accent); flex-shrink: 0; }
+    .user-name { font-weight: 600; font-size: 0.875rem; }
+    .user-role { font-size: 0.75rem; color: var(--muted); }
+    .nav-section { padding: 1rem 0.75rem 0.5rem; }
+    .nav-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); padding: 0 0.5rem; margin-bottom: 0.5rem; }
+    .nav-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0.75rem; border-radius: 8px; cursor: pointer; color: var(--muted); font-size: 0.875rem; font-weight: 500; transition: all 0.15s; margin-bottom: 2px; }
+    .nav-item:hover { background: var(--surface2); color: var(--text); }
+    .nav-item.active { background: var(--accent-dim); color: var(--accent); }
+    .nav-item .icon { font-size: 1rem; width: 20px; text-align: center; }
+    .nav-badge { margin-left: auto; background: var(--accent); color: white; font-size: 0.65rem; font-weight: 700; padding: 2px 6px; border-radius: 10px; min-width: 18px; text-align: center; }
+    .sidebar-bottom { margin-top: auto; padding: 1rem 0.75rem; border-top: 1px solid var(--border); }
+    .logout-btn { display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0.75rem; border-radius: 8px; cursor: pointer; color: var(--muted); font-size: 0.875rem; font-weight: 500; transition: all 0.15s; width: 100%; background: none; border: none; font-family: 'Space Grotesk', sans-serif; }
+    .logout-btn:hover { background: var(--red-dim); color: var(--red); }
+    .main { margin-left: 240px; min-height: 100vh; }
+    .topbar { padding: 1.25rem 2rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: var(--bg); position: sticky; top: 40px; z-index: 40; }
+    .page-title { font-size: 1.4rem; font-weight: 700; }
+    .topbar-actions { display: flex; gap: 0.75rem; align-items: center; }
+    .btn { padding: 0.55rem 1.1rem; border-radius: 8px; font-family: 'Space Grotesk', sans-serif; font-size: 0.875rem; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s; display: flex; align-items: center; gap: 0.4rem; }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-primary:hover { background: var(--accent-light); transform: translateY(-1px); }
+    .btn-ghost { background: transparent; color: var(--muted); border: 1.5px solid var(--border); }
+    .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+    .content { padding: 2rem; }
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }
+    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 1.25rem; position: relative; overflow: hidden; }
+    .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+    .stat-card.purple::before { background: var(--accent); }
+    .stat-card.green::before { background: var(--green); }
+    .stat-card.yellow::before { background: var(--yellow); }
+    .stat-card.red::before { background: var(--red); }
+    .stat-label { font-size: 0.75rem; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem; }
+    .stat-value { font-size: 2rem; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+    .stat-card.purple .stat-value { color: var(--accent-light); }
+    .stat-card.green .stat-value { color: var(--green); }
+    .stat-card.yellow .stat-value { color: var(--yellow); }
+    .stat-card.red .stat-value { color: var(--red); }
+    .filter-bar { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap; align-items: center; }
+    .filter-chip { padding: 0.4rem 0.9rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; cursor: pointer; border: 1.5px solid var(--border); background: transparent; color: var(--muted); font-family: 'Space Grotesk', sans-serif; transition: all 0.15s; }
+    .filter-chip.active { background: var(--accent); border-color: var(--accent); color: white; }
+    .filter-chip:hover:not(.active) { border-color: var(--accent); color: var(--accent); }
+    .search-box { margin-left: auto; padding: 0.4rem 0.9rem; background: var(--surface); border: 1.5px solid var(--border); border-radius: 20px; color: var(--text); font-family: 'Space Grotesk', sans-serif; font-size: 0.8rem; outline: none; width: 200px; transition: border-color 0.2s; }
+    .search-box:focus { border-color: var(--accent); }
+    .view-toggle { display: flex; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+    .view-btn { padding: 0.35rem 0.75rem; border: none; background: transparent; color: var(--muted); cursor: pointer; font-size: 0.9rem; transition: all 0.15s; }
+    .view-btn.active { background: var(--accent); color: white; }
+    .kanban { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; }
+    .kanban-col { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 1rem; min-height: 300px; }
+    .col-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+    .col-title { font-weight: 700; font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem; }
+    .col-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .col-count { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--muted); background: var(--bg); padding: 2px 8px; border-radius: 10px; }
+    .task-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 1rem; margin-bottom: 0.75rem; cursor: pointer; transition: border-color 0.2s, transform 0.15s; position: relative; }
+    .task-card:hover { border-color: var(--accent); transform: translateY(-1px); }
+    .task-priority { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 2px 8px; border-radius: 4px; margin-bottom: 0.6rem; }
+    .priority-high { background: var(--red-dim); color: var(--red); }
+    .priority-medium { background: var(--yellow-dim); color: var(--yellow); }
+    .priority-low { background: var(--green-dim); color: var(--green); }
+    .task-title { font-weight: 600; font-size: 0.9rem; line-height: 1.4; margin-bottom: 0.5rem; }
+    .task-desc { font-size: 0.8rem; color: var(--muted); line-height: 1.5; margin-bottom: 0.75rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .task-footer { display: flex; align-items: center; justify-content: space-between; }
+    .task-due { font-size: 0.75rem; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+    .task-due.overdue { color: var(--red); }
+    .task-due.soon { color: var(--yellow); }
+    .task-actions { display: flex; gap: 0.4rem; opacity: 0; transition: opacity 0.15s; }
+    .task-card:hover .task-actions { opacity: 1; }
+    .action-btn { background: var(--surface); border: 1px solid var(--border); color: var(--muted); width: 26px; height: 26px; border-radius: 5px; cursor: pointer; font-size: 0.75rem; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+    .action-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .action-btn.delete:hover { border-color: var(--red); color: var(--red); }
+    .task-list { display: flex; flex-direction: column; gap: 0.5rem; }
+    .task-row { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.25rem; display: flex; align-items: center; gap: 1rem; cursor: pointer; transition: border-color 0.2s; }
+    .task-row:hover { border-color: var(--accent); }
+    .task-row-check { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--border); cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+    .task-row-check.done { background: var(--green); border-color: var(--green); }
+    .task-row-title { flex: 1; font-weight: 600; font-size: 0.9rem; }
+    .task-row-title.done { text-decoration: line-through; color: var(--muted); }
+    .status-badge { font-size: 0.7rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
+    .status-todo { background: var(--blue-dim); color: var(--blue); }
+    .status-inprogress { background: var(--yellow-dim); color: var(--yellow); }
+    .status-done { background: var(--green-dim); color: var(--green); }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 1.5rem; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+    .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 2rem; width: 100%; max-width: 520px; transform: scale(0.95); transition: transform 0.2s; max-height: 90vh; overflow-y: auto; }
+    .modal-overlay.open .modal { transform: scale(1); }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+    .modal-title { font-size: 1.1rem; font-weight: 700; }
+    .close-btn { background: none; border: none; color: var(--muted); font-size: 1.3rem; cursor: pointer; line-height: 1; transition: color 0.15s; }
+    .close-btn:hover { color: var(--text); }
+    .modal .field select { width: 100%; padding: 0.7rem 1rem; background: var(--bg); border: 1.5px solid var(--border); border-radius: 9px; color: var(--text); font-family: 'Space Grotesk', sans-serif; font-size: 0.9rem; outline: none; appearance: none; transition: border-color 0.2s; }
+    .modal .field select:focus { border-color: var(--accent); }
+    .modal .field textarea { width: 100%; padding: 0.7rem 1rem; background: var(--bg); border: 1.5px solid var(--border); border-radius: 9px; color: var(--text); font-family: 'Space Grotesk', sans-serif; font-size: 0.9rem; outline: none; resize: vertical; min-height: 90px; transition: border-color 0.2s; }
+    .modal .field textarea:focus { border-color: var(--accent); }
+    .modal-footer { display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.5rem; }
+    #toast { position: fixed; bottom: 1.5rem; right: 1.5rem; padding: 0.75rem 1.25rem; border-radius: 10px; font-size: 0.875rem; font-weight: 500; z-index: 200; transform: translateY(80px); opacity: 0; transition: all 0.3s; display: flex; align-items: center; gap: 0.5rem; }
+    #toast.show { transform: translateY(0); opacity: 1; }
+    #toast.success { background: var(--green); color: white; }
+    #toast.error { background: var(--red); color: white; }
+    #toast.info { background: var(--accent); color: white; }
+    .menu-toggle { display: none; background: none; border: none; color: var(--text); font-size: 1.3rem; cursor: pointer; padding: 0.25rem; }
+    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 49; }
+    .empty-state { text-align: center; padding: 3rem 1rem; color: var(--muted); }
+    .empty-state .icon { font-size: 3rem; margin-bottom: 0.75rem; }
+    .empty-state h3 { color: var(--text); margin-bottom: 0.5rem; }
+    .progress-wrap { margin-bottom: 2rem; }
+    .progress-label { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--muted); margin-bottom: 0.5rem; }
+    .progress-bar { height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--green)); border-radius: 3px; transition: width 0.5s ease; }
+    @media (max-width: 900px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } .kanban { grid-template-columns: 1fr; } }
+    @media (max-width: 640px) {
+      .sidebar { transform: translateX(-100%); top: 80px; }
+      .sidebar.open { transform: translateX(0); }
+      .sidebar-overlay.open { display: block; }
+      .main { margin-left: 0; }
+      .menu-toggle { display: block; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .content { padding: 1rem; }
+      .topbar { padding: 1rem; }
+      .search-box { width: 130px; }
+      #dl-banner { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══ DOWNLOAD BANNER ══ -->
+<div id="dl-banner">
+  <span>⬇️ TaskFlow Complete Project &nbsp;|&nbsp; Frontend (this file) + Django Backend included</span>
+  <button class="dl-btn" onclick="downloadBackend()">📦 Download Django Backend</button>
+</div>
+
+<!-- ══ AUTH SCREEN ══ -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">Task<span>Flow</span></div>
+    <div class="auth-tagline">Manage your work, beautifully.</div>
+    <div class="tab-row">
+      <button class="tab-btn active" id="tab-login" onclick="switchTab('login')">Sign In</button>
+      <button class="tab-btn" id="tab-register" onclick="switchTab('register')">Register</button>
+    </div>
+    <div id="auth-fields"></div>
+    <button class="auth-submit" onclick="handleAuth()">Continue →</button>
+  </div>
+</div>
+
+<!-- ══ APP SCREEN ══ -->
+<div id="app-screen">
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">Task<span>Flow</span></div>
+    <div class="sidebar-user">
+      <div class="avatar" id="user-avatar">?</div>
+      <div>
+        <div class="user-name" id="sidebar-name">User</div>
+        <div class="user-role">Team Member</div>
+      </div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Workspace</div>
+      <div class="nav-item active" id="nav-dashboard" onclick="showView('dashboard')"><span class="icon">📊</span> Dashboard</div>
+      <div class="nav-item" id="nav-tasks" onclick="showView('tasks')"><span class="icon">✅</span> My Tasks <span class="nav-badge" id="badge-tasks">0</span></div>
+      <div class="nav-item" id="nav-inprogress" onclick="showView('inprogress')"><span class="icon">⚡</span> In Progress <span class="nav-badge" id="badge-inprogress" style="background:var(--yellow)">0</span></div>
+      <div class="nav-item" id="nav-completed" onclick="showView('completed')"><span class="icon">🎯</span> Completed</div>
+    </div>
+    <div class="sidebar-bottom">
+      <button class="logout-btn" onclick="doLogout()"><span class="icon">🚪</span> Sign Out</button>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:1rem">
+        <button class="menu-toggle" onclick="openSidebar()">☰</button>
+        <div class="page-title" id="page-title">Dashboard</div>
+      </div>
+      <div class="topbar-actions">
+        <div class="view-toggle" id="view-toggle" style="display:none">
+          <button class="view-btn active" id="vbtn-kanban" onclick="setView('kanban')" title="Kanban">⊞</button>
+          <button class="view-btn" id="vbtn-list" onclick="setView('list')" title="List">☰</button>
+        </div>
+        <button class="btn btn-primary" onclick="openNewTask()">＋ New Task</button>
+      </div>
+    </div>
+    <div class="content">
+      <div id="view-dashboard">
+        <div class="stats-grid" id="stats-grid"></div>
+        <div class="progress-wrap">
+          <div class="progress-label"><span>Overall Progress</span><span id="progress-pct">0%</span></div>
+          <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+        </div>
+        <div style="font-size:0.85rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:1rem">Recent Tasks</div>
+        <div id="recent-tasks"></div>
+      </div>
+      <div id="view-tasks" style="display:none">
+        <div class="filter-bar" id="filter-bar">
+          <button class="filter-chip active" onclick="setFilter('all',this)">All</button>
+          <button class="filter-chip" onclick="setFilter('high',this)">🔴 High</button>
+          <button class="filter-chip" onclick="setFilter('medium',this)">🟡 Medium</button>
+          <button class="filter-chip" onclick="setFilter('low',this)">🟢 Low</button>
+          <input class="search-box" placeholder="🔍 Search tasks…" oninput="setSearch(this.value)"/>
+        </div>
+        <div id="kanban-board"></div>
+        <div id="list-board" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TASK MODAL ══ -->
+<div class="modal-overlay" id="task-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">New Task</div>
+      <button class="close-btn" onclick="closeModal()">✕</button>
+    </div>
+    <div class="field"><label>Title *</label><input id="t-title" placeholder="What needs to be done?"/></div>
+    <div class="field"><label>Description</label><textarea id="t-desc" placeholder="Add details…"></textarea></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
+      <div class="field"><label>Priority</label>
+        <select id="t-priority"><option value="high">🔴 High</option><option value="medium" selected>🟡 Medium</option><option value="low">🟢 Low</option></select>
+      </div>
+      <div class="field"><label>Status</label>
+        <select id="t-status"><option value="todo">To Do</option><option value="inprogress">In Progress</option><option value="done">Done</option></select>
+      </div>
+    </div>
+    <div class="field"><label>Due Date</label><input id="t-due" type="date"/></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveTask()">Save Task</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── BACKEND FILES (embedded) ──
+const BACKEND_FILES = {
+  'requirements.txt': `Django==4.2.7\ndjangorestframework==3.14.0\ndjangorestframework-simplejwt==5.3.0\ndjango-cors-headers==4.3.0\nchannels==4.0.0\nchannels-redis==4.1.0\ndaphne==4.0.0\npython-dotenv==1.0.0\n`,
+
+  'manage.py': `#!/usr/bin/env python\nimport os, sys\ndef main():\n    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'taskflow.settings')\n    try:\n        from django.core.management import execute_from_command_line\n    except ImportError as exc:\n        raise ImportError("Couldn't import Django.") from exc\n    execute_from_command_line(sys.argv)\nif __name__ == '__main__':\n    main()\n`,
+
+  'taskflow/__init__.py': '',
+
+  'taskflow/settings.py': `import os\nfrom pathlib import Path\nfrom datetime import timedelta\nBASE_DIR = Path(__file__).resolve().parent.parent\nSECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-change-this-xyz123')\nDEBUG = True\nALLOWED_HOSTS = ['*']\nINSTALLED_APPS = [\n    'django.contrib.admin','django.contrib.auth','django.contrib.contenttypes',\n    'django.contrib.sessions','django.contrib.messages','django.contrib.staticfiles',\n    'rest_framework','rest_framework_simplejwt','corsheaders','channels','users','tasks',\n]\nMIDDLEWARE = [\n    'django.middleware.security.SecurityMiddleware',\n    'corsheaders.middleware.CorsMiddleware',\n    'django.contrib.sessions.middleware.SessionMiddleware',\n    'django.middleware.common.CommonMiddleware',\n    'django.middleware.csrf.CsrfViewMiddleware',\n    'django.contrib.auth.middleware.AuthenticationMiddleware',\n    'django.contrib.messages.middleware.MessageMiddleware',\n    'django.middleware.clickjacking.XFrameOptionsMiddleware',\n]\nROOT_URLCONF = 'taskflow.urls'\nTEMPLATES = [{'BACKEND':'django.template.backends.django.DjangoTemplates','DIRS':[BASE_DIR/'templates'],'APP_DIRS':True,'OPTIONS':{'context_processors':['django.template.context_processors.debug','django.template.context_processors.request','django.contrib.auth.context_processors.auth','django.contrib.messages.context_processors.messages']}}]\nASGI_APPLICATION = 'taskflow.asgi.application'\nDATABASES = {'default':{'ENGINE':'django.db.backends.sqlite3','NAME':BASE_DIR/'db.sqlite3'}}\nCHANNEL_LAYERS = {'default':{'BACKEND':'channels.layers.InMemoryChannelLayer'}}\nAUTH_PASSWORD_VALIDATORS = [{'NAME':'django.contrib.auth.password_validation.MinimumLengthValidator'}]\nLANGUAGE_CODE='en-us'\nTIME_ZONE='UTC'\nUSE_I18N=True\nUSE_TZ=True\nSTATIC_URL='static/'\nDEFAULT_AUTO_FIELD='django.db.models.BigAutoField'\nAUTH_USER_MODEL='users.User'\nREST_FRAMEWORK={'DEFAULT_AUTHENTICATION_CLASSES':('rest_framework_simplejwt.authentication.JWTAuthentication',),'DEFAULT_PERMISSION_CLASSES':('rest_framework.permissions.IsAuthenticated',)}\nSIMPLE_JWT={'ACCESS_TOKEN_LIFETIME':timedelta(hours=12),'REFRESH_TOKEN_LIFETIME':timedelta(days=7),'ROTATE_REFRESH_TOKENS':True,'AUTH_HEADER_TYPES':('Bearer',)}\nCORS_ALLOW_ALL_ORIGINS=True\nCORS_ALLOW_CREDENTIALS=True\n`,
+
+  'taskflow/urls.py': `from django.contrib import admin\nfrom django.urls import path, include\nfrom rest_framework_simplejwt.views import TokenRefreshView\nfrom users.views import RegisterView, LoginView, ProfileView\nurlpatterns = [\n    path('admin/', admin.site.urls),\n    path('api/auth/register/', RegisterView.as_view(), name='register'),\n    path('api/auth/login/', LoginView.as_view(), name='login'),\n    path('api/auth/refresh/', TokenRefreshView.as_view(), name='token_refresh'),\n    path('api/auth/profile/', ProfileView.as_view(), name='profile'),\n    path('api/', include('tasks.urls')),\n]\n`,
+
+  'taskflow/asgi.py': `import os\nfrom django.core.asgi import get_asgi_application\nfrom channels.routing import ProtocolTypeRouter, URLRouter\nfrom channels.auth import AuthMiddlewareStack\nimport tasks.routing\nos.environ.setdefault('DJANGO_SETTINGS_MODULE', 'taskflow.settings')\napplication = ProtocolTypeRouter({\n    'http': get_asgi_application(),\n    'websocket': AuthMiddlewareStack(URLRouter(tasks.routing.websocket_urlpatterns)),\n})\n`,
+
+  'users/__init__.py': '',
+  'users/apps.py': `from django.apps import AppConfig\nclass UsersConfig(AppConfig):\n    default_auto_field='django.db.models.BigAutoField'\n    name='users'\n`,
+
+  'users/models.py': `from django.db import models\nfrom django.contrib.auth.models import AbstractUser\nclass User(AbstractUser):\n    email = models.EmailField(unique=True)\n    avatar = models.CharField(max_length=2, blank=True, default='')\n    bio = models.TextField(blank=True, default='')\n    created_at = models.DateTimeField(auto_now_add=True)\n    USERNAME_FIELD = 'email'\n    REQUIRED_FIELDS = ['username','first_name']\n    def save(self,*args,**kwargs):\n        if not self.avatar and self.first_name:\n            self.avatar = self.first_name[0].upper()\n        super().save(*args,**kwargs)\n    def __str__(self): return self.email\n`,
+
+  'users/serializers.py': `from rest_framework import serializers\nfrom django.contrib.auth import get_user_model\nUser = get_user_model()\nclass RegisterSerializer(serializers.ModelSerializer):\n    password = serializers.CharField(write_only=True, min_length=6)\n    class Meta:\n        model=User; fields=('id','first_name','email','password')\n    def create(self,validated_data):\n        return User.objects.create_user(username=validated_data['email'],email=validated_data['email'],first_name=validated_data['first_name'],password=validated_data['password'])\nclass UserSerializer(serializers.ModelSerializer):\n    class Meta:\n        model=User; fields=('id','first_name','last_name','email','avatar','bio','created_at'); read_only_fields=('id','email','created_at')\n`,
+
+  'users/views.py': `from rest_framework import status, generics\nfrom rest_framework.response import Response\nfrom rest_framework.views import APIView\nfrom rest_framework.permissions import AllowAny, IsAuthenticated\nfrom rest_framework_simplejwt.tokens import RefreshToken\nfrom django.contrib.auth import authenticate, get_user_model\nfrom .serializers import RegisterSerializer, UserSerializer\nUser = get_user_model()\ndef get_tokens(user):\n    refresh = RefreshToken.for_user(user)\n    return {'refresh':str(refresh),'access':str(refresh.access_token)}\nclass RegisterView(APIView):\n    permission_classes=[AllowAny]\n    def post(self,request):\n        s=RegisterSerializer(data=request.data)\n        if s.is_valid():\n            user=s.save(); tokens=get_tokens(user)\n            return Response({'user':UserSerializer(user).data,**tokens},status=status.HTTP_201_CREATED)\n        return Response(s.errors,status=status.HTTP_400_BAD_REQUEST)\nclass LoginView(APIView):\n    permission_classes=[AllowAny]\n    def post(self,request):\n        email=request.data.get('email','').strip().lower()\n        password=request.data.get('password','')\n        user=authenticate(request,username=email,password=password)\n        if not user: return Response({'detail':'Invalid email or password.'},status=status.HTTP_401_UNAUTHORIZED)\n        return Response({'user':UserSerializer(user).data,**get_tokens(user)})\nclass ProfileView(generics.RetrieveUpdateAPIView):\n    permission_classes=[IsAuthenticated]; serializer_class=UserSerializer\n    def get_object(self): return self.request.user\n`,
+
+  'tasks/__init__.py': '',
+  'tasks/apps.py': `from django.apps import AppConfig\nclass TasksConfig(AppConfig):\n    default_auto_field='django.db.models.BigAutoField'\n    name='tasks'\n`,
+
+  'tasks/models.py': `from django.db import models\nfrom django.conf import settings\nclass Task(models.Model):\n    PRIORITY_CHOICES=[('low','Low'),('medium','Medium'),('high','High')]\n    STATUS_CHOICES=[('todo','To Do'),('inprogress','In Progress'),('done','Done')]\n    user=models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE,related_name='tasks')\n    title=models.CharField(max_length=255)\n    description=models.TextField(blank=True,default='')\n    priority=models.CharField(max_length=10,choices=PRIORITY_CHOICES,default='medium')\n    status=models.CharField(max_length=20,choices=STATUS_CHOICES,default='todo')\n    due_date=models.DateField(null=True,blank=True)\n    created_at=models.DateTimeField(auto_now_add=True)\n    updated_at=models.DateTimeField(auto_now=True)\n    class Meta: ordering=['-created_at']\n    def __str__(self): return self.title\nclass Comment(models.Model):\n    task=models.ForeignKey(Task,on_delete=models.CASCADE,related_name='comments')\n    user=models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE)\n    body=models.TextField()\n    created_at=models.DateTimeField(auto_now_add=True)\n    class Meta: ordering=['created_at']\n`,
+
+  'tasks/serializers.py': `from rest_framework import serializers\nfrom .models import Task, Comment\nclass CommentSerializer(serializers.ModelSerializer):\n    author=serializers.SerializerMethodField()\n    class Meta:\n        model=Comment; fields=('id','body','author','created_at'); read_only_fields=('id','author','created_at')\n    def get_author(self,obj): return obj.user.first_name or obj.user.email\nclass TaskSerializer(serializers.ModelSerializer):\n    comments=CommentSerializer(many=True,read_only=True)\n    comment_count=serializers.SerializerMethodField()\n    is_overdue=serializers.SerializerMethodField()\n    class Meta:\n        model=Task; fields=('id','title','description','priority','status','due_date','created_at','updated_at','comments','comment_count','is_overdue'); read_only_fields=('id','created_at','updated_at')\n    def get_comment_count(self,obj): return obj.comments.count()\n    def get_is_overdue(self,obj):\n        from django.utils import timezone\n        return obj.due_date and obj.status!='done' and obj.due_date<timezone.now().date()\nclass TaskCreateUpdateSerializer(serializers.ModelSerializer):\n    class Meta:\n        model=Task; fields=('id','title','description','priority','status','due_date')\n    def validate_title(self,v):\n        if not v.strip(): raise serializers.ValidationError('Title cannot be empty.')\n        return v.strip()\n`,
+
+  'tasks/views.py': `from rest_framework import generics, status, filters\nfrom rest_framework.decorators import api_view, permission_classes\nfrom rest_framework.permissions import IsAuthenticated\nfrom rest_framework.response import Response\nfrom django.shortcuts import get_object_or_404\nfrom django.utils import timezone\nfrom .models import Task, Comment\nfrom .serializers import TaskSerializer, TaskCreateUpdateSerializer, CommentSerializer\nfrom .consumers import broadcast_task_event\nclass TaskListCreateView(generics.ListCreateAPIView):\n    permission_classes=[IsAuthenticated]\n    filter_backends=[filters.SearchFilter,filters.OrderingFilter]\n    search_fields=['title','description']\n    ordering=['-created_at']\n    def get_serializer_class(self):\n        return TaskCreateUpdateSerializer if self.request.method=='POST' else TaskSerializer\n    def get_queryset(self):\n        qs=Task.objects.filter(user=self.request.user)\n        s=self.request.query_params.get('status'); p=self.request.query_params.get('priority')\n        if s: qs=qs.filter(status=s)\n        if p: qs=qs.filter(priority=p)\n        return qs\n    def perform_create(self,serializer):\n        task=serializer.save(user=self.request.user)\n        broadcast_task_event(self.request.user.id,'task_created',TaskSerializer(task).data)\nclass TaskDetailView(generics.RetrieveUpdateDestroyAPIView):\n    permission_classes=[IsAuthenticated]\n    def get_serializer_class(self):\n        return TaskCreateUpdateSerializer if self.request.method in ('PUT','PATCH') else TaskSerializer\n    def get_queryset(self): return Task.objects.filter(user=self.request.user)\n    def perform_update(self,serializer):\n        task=serializer.save(); broadcast_task_event(self.request.user.id,'task_updated',TaskSerializer(task).data)\n    def perform_destroy(self,instance):\n        tid=instance.id; instance.delete(); broadcast_task_event(self.request.user.id,'task_deleted',{'id':tid})\n@api_view(['PATCH'])\n@permission_classes([IsAuthenticated])\ndef update_task_status(request,pk):\n    task=get_object_or_404(Task,pk=pk,user=request.user)\n    ns=request.data.get('status')\n    if ns not in dict(Task.STATUS_CHOICES): return Response({'detail':'Invalid status.'},status=status.HTTP_400_BAD_REQUEST)\n    task.status=ns; task.save(update_fields=['status','updated_at'])\n    broadcast_task_event(request.user.id,'task_updated',TaskSerializer(task).data)\n    return Response(TaskSerializer(task).data)\n@api_view(['GET'])\n@permission_classes([IsAuthenticated])\ndef task_stats(request):\n    qs=Task.objects.filter(user=request.user); today=timezone.now().date()\n    return Response({'total':qs.count(),'todo':qs.filter(status='todo').count(),'inprogress':qs.filter(status='inprogress').count(),'done':qs.filter(status='done').count(),'overdue':qs.filter(due_date__lt=today).exclude(status='done').count()})\n@api_view(['GET','POST'])\n@permission_classes([IsAuthenticated])\ndef task_comments(request,pk):\n    task=get_object_or_404(Task,pk=pk,user=request.user)\n    if request.method=='GET': return Response(CommentSerializer(task.comments.all(),many=True).data)\n    s=CommentSerializer(data=request.data)\n    if s.is_valid():\n        c=s.save(task=task,user=request.user); return Response(CommentSerializer(c).data,status=status.HTTP_201_CREATED)\n    return Response(s.errors,status=status.HTTP_400_BAD_REQUEST)\n@api_view(['DELETE'])\n@permission_classes([IsAuthenticated])\ndef delete_comment(request,pk,comment_pk):\n    c=get_object_or_404(Comment,pk=comment_pk,task__pk=pk,user=request.user); c.delete()\n    return Response(status=status.HTTP_204_NO_CONTENT)\n`,
+
+  'tasks/urls.py': `from django.urls import path\nfrom . import views\nurlpatterns = [\n    path('tasks/', views.TaskListCreateView.as_view(), name='task-list-create'),\n    path('tasks/<int:pk>/', views.TaskDetailView.as_view(), name='task-detail'),\n    path('tasks/<int:pk>/status/', views.update_task_status, name='task-status'),\n    path('tasks/stats/', views.task_stats, name='task-stats'),\n    path('tasks/<int:pk>/comments/', views.task_comments, name='task-comments'),\n    path('tasks/<int:pk>/comments/<int:comment_pk>/', views.delete_comment, name='delete-comment'),\n]\n`,
+
+  'tasks/consumers.py': `import json\nfrom channels.generic.websocket import AsyncWebsocketConsumer\nfrom asgiref.sync import async_to_sync\nfrom channels.layers import get_channel_layer\nclass TaskConsumer(AsyncWebsocketConsumer):\n    async def connect(self):\n        user=self.scope.get('user')\n        if not user or not user.is_authenticated: await self.close(); return\n        self.group_name=f'tasks_user_{user.id}'\n        await self.channel_layer.group_add(self.group_name,self.channel_name)\n        await self.accept()\n        await self.send(text_data=json.dumps({'type':'connected','message':'Real-time sync active'}))\n    async def disconnect(self,code):\n        if hasattr(self,'group_name'): await self.channel_layer.group_discard(self.group_name,self.channel_name)\n    async def receive(self,text_data=None,bytes_data=None):\n        try:\n            data=json.loads(text_data or '{}')\n            if data.get('type')=='ping': await self.send(text_data=json.dumps({'type':'pong'}))\n        except: pass\n    async def task_event(self,event):\n        await self.send(text_data=json.dumps({'type':event['event_type'],'payload':event['payload']}))\ndef broadcast_task_event(user_id,event_type,payload):\n    cl=get_channel_layer()\n    async_to_sync(cl.group_send)(f'tasks_user_{user_id}',{'type':'task_event','event_type':event_type,'payload':payload})\n`,
+
+  'tasks/routing.py': `from django.urls import re_path\nfrom . import consumers\nwebsocket_urlpatterns = [re_path(r'ws/tasks/$', consumers.TaskConsumer.as_asgi())]\n`,
+
+  'README.md': `# TaskFlow — Django Backend\n\n## Setup\n\`\`\`bash\npython -m venv venv\nsource venv/bin/activate\npip install -r requirements.txt\npython manage.py makemigrations users tasks\npython manage.py migrate\ndaphne -p 8000 taskflow.asgi:application\n\`\`\`\n\n## API Endpoints\n- POST /api/auth/register/\n- POST /api/auth/login/\n- GET/POST /api/tasks/\n- GET/PUT/DELETE /api/tasks/{id}/\n- GET /api/tasks/stats/\n- WS ws://localhost:8000/ws/tasks/\n\n## GitHub Repo Name\nCodeAlpha_TaskManagement\n`
+};
+
+// ── DOWNLOAD BACKEND ──
+function downloadBackend() {
+  // We'll create individual files as a text bundle since JSZip isn't available inline
+  // Instead create a self-extracting HTML that shows all files
+  let content = '# TaskFlow Django Backend — All Files\n';
+  content += '# Copy each file into the correct folder\n\n';
+  for (const [path, code] of Object.entries(BACKEND_FILES)) {
+    content += `\n${'='.repeat(60)}\n# FILE: ${path}\n${'='.repeat(60)}\n${code}\n`;
+  }
+  const blob = new Blob([content], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'taskflow_backend_all_files.txt';
+  a.click();
+  showToast('Backend files downloaded! ✓', 'success');
+}
+
+// ══════════════════════════════════════
+// FRONTEND APP CODE
+// ══════════════════════════════════════
+let currentUser = JSON.parse(localStorage.getItem('tf_user') || 'null');
+let tasks = JSON.parse(localStorage.getItem('tf_tasks') || '[]');
+let editingId = null, activeFilter = 'all', searchQuery = '', boardView = 'kanban', authMode = 'login', currentNav = 'dashboard';
+
+function switchTab(mode) {
+  authMode = mode;
+  document.getElementById('tab-login').classList.toggle('active', mode === 'login');
+  document.getElementById('tab-register').classList.toggle('active', mode === 'register');
+  renderAuthFields();
+}
+
+function renderAuthFields() {
+  document.getElementById('auth-fields').innerHTML = authMode === 'login' ? `
+    <div class="field"><label>Email</label><input id="a-email" type="email" placeholder="you@example.com"/></div>
+    <div class="field"><label>Password</label><input id="a-pass" type="password" placeholder="••••••••"/></div>
+  ` : `
+    <div class="field"><label>Full Name</label><input id="a-name" placeholder="Jane Smith"/></div>
+    <div class="field"><label>Email</label><input id="a-email" type="email" placeholder="you@example.com"/></div>
+    <div class="field"><label>Password</label><input id="a-pass" type="password" placeholder="Create a password"/></div>
+  `;
+}
+
+function handleAuth() {
+  const email = document.getElementById('a-email')?.value.trim();
+  const pass = document.getElementById('a-pass')?.value;
+  if (!email || !pass) { showToast('Fill all fields', 'error'); return; }
+  const users = JSON.parse(localStorage.getItem('tf_users') || '[]');
+  if (authMode === 'login') {
+    const user = users.find(u => u.email === email && u.pass === pass);
+    if (!user) { showToast('Wrong email or password', 'error'); return; }
+    loginUser(user);
+  } else {
+    const name = document.getElementById('a-name')?.value.trim();
+    if (!name) { showToast('Enter your name', 'error'); return; }
+    if (users.find(u => u.email === email)) { showToast('Email already used', 'error'); return; }
+    const user = { id: Date.now(), name, email, pass };
+    users.push(user); localStorage.setItem('tf_users', JSON.stringify(users));
+    loginUser(user);
+  }
+}
+
+function loginUser(user) {
+  currentUser = user; localStorage.setItem('tf_user', JSON.stringify(user));
+  loadUserTasks();
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app-screen').style.display = 'block';
+  document.getElementById('sidebar-name').textContent = user.name.split(' ')[0];
+  document.getElementById('user-avatar').textContent = user.name[0].toUpperCase();
+  showView('dashboard');
+  showToast(`Welcome, ${user.name.split(' ')[0]}! 👋`, 'success');
+  if (tasks.length === 0) addSampleTasks();
+}
+
+function doLogout() {
+  currentUser = null; localStorage.removeItem('tf_user');
+  document.getElementById('app-screen').style.display = 'none';
+  document.getElementById('auth-screen').style.display = 'flex';
+  renderAuthFields(); showToast('Signed out', 'info');
+}
+
+function loadUserTasks() {
+  tasks = JSON.parse(localStorage.getItem('tf_tasks') || '[]').filter(t => t.userId === currentUser.id);
+}
+
+function saveTasks() {
+  const others = JSON.parse(localStorage.getItem('tf_tasks') || '[]').filter(t => t.userId !== currentUser.id);
+  localStorage.setItem('tf_tasks', JSON.stringify([...others, ...tasks]));
+  updateBadges();
+}
+
+function showView(name) {
+  currentNav = name; closeSidebar();
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('nav-' + name)?.classList.add('active');
+  document.getElementById('page-title').textContent = { dashboard:'Dashboard', tasks:'My Tasks', inprogress:'In Progress', completed:'Completed' }[name];
+  document.getElementById('view-dashboard').style.display = 'none';
+  document.getElementById('view-tasks').style.display = 'none';
+  document.getElementById('view-toggle').style.display = 'none';
+  if (name === 'dashboard') { document.getElementById('view-dashboard').style.display = 'block'; renderDashboard(); }
+  else { document.getElementById('view-tasks').style.display = 'block'; document.getElementById('view-toggle').style.display = 'flex'; renderTasksView(name); }
+}
+
+function renderDashboard() {
+  const total=tasks.length, done=tasks.filter(t=>t.status==='done').length,
+        inprog=tasks.filter(t=>t.status==='inprogress').length,
+        overdue=tasks.filter(t=>t.due&&new Date(t.due)<new Date()&&t.status!=='done').length;
+  document.getElementById('stats-grid').innerHTML = `
+    <div class="stat-card purple"><div class="stat-label">Total Tasks</div><div class="stat-value">${total}</div></div>
+    <div class="stat-card green"><div class="stat-label">Completed</div><div class="stat-value">${done}</div></div>
+    <div class="stat-card yellow"><div class="stat-label">In Progress</div><div class="stat-value">${inprog}</div></div>
+    <div class="stat-card red"><div class="stat-label">Overdue</div><div class="stat-value">${overdue}</div></div>`;
+  const pct = total ? Math.round(done/total*100) : 0;
+  document.getElementById('progress-pct').textContent = pct+'%';
+  document.getElementById('progress-fill').style.width = pct+'%';
+  const recent = [...tasks].sort((a,b)=>b.id-a.id).slice(0,5);
+  document.getElementById('recent-tasks').innerHTML = recent.length
+    ? `<div class="task-list">${recent.map(taskRowHTML).join('')}</div>`
+    : `<div class="empty-state"><div class="icon">📋</div><h3>No tasks yet</h3><p>Create your first task!</p></div>`;
+}
+
+function renderTasksView(nav) {
+  let f = [...tasks];
+  if (nav==='inprogress') f=f.filter(t=>t.status==='inprogress');
+  if (nav==='completed') f=f.filter(t=>t.status==='done');
+  if (activeFilter!=='all') f=f.filter(t=>t.priority===activeFilter);
+  if (searchQuery) f=f.filter(t=>t.title.toLowerCase().includes(searchQuery)||(t.desc||'').toLowerCase().includes(searchQuery));
+  boardView==='kanban' ? renderKanban(f) : renderList(f);
+}
+
+function renderKanban(filtered) {
+  document.getElementById('kanban-board').style.display='grid';
+  document.getElementById('list-board').style.display='none';
+  document.getElementById('kanban-board').innerHTML = [
+    {key:'todo',label:'To Do',color:'#3b82f6'},
+    {key:'inprogress',label:'In Progress',color:'#f59e0b'},
+    {key:'done',label:'Done',color:'#22c55e'}
+  ].map(col => {
+    const ct = filtered.filter(t=>t.status===col.key);
+    return `<div class="kanban-col">
+      <div class="col-header"><div class="col-title"><div class="col-dot" style="background:${col.color}"></div>${col.label}</div><div class="col-count">${ct.length}</div></div>
+      ${ct.length ? ct.map(taskCardHTML).join('') : '<div style="color:var(--muted);font-size:0.8rem;text-align:center;padding:1.5rem 0">No tasks here</div>'}
+    </div>`;
+  }).join('');
+}
+
+function renderList(filtered) {
+  document.getElementById('kanban-board').style.display='none';
+  document.getElementById('list-board').style.display='block';
+  document.getElementById('list-board').innerHTML = filtered.length
+    ? `<div class="task-list">${filtered.map(taskRowHTML).join('')}</div>`
+    : `<div class="empty-state"><div class="icon">🔍</div><h3>No tasks found</h3></div>`;
+}
+
+function taskCardHTML(t) {
+  const d=dueMeta(t.due);
+  return `<div class="task-card" onclick="openEditTask(${t.id})">
+    <div class="task-priority priority-${t.priority}">${t.priority.toUpperCase()}</div>
+    <div class="task-title">${escHtml(t.title)}</div>
+    ${t.desc?`<div class="task-desc">${escHtml(t.desc)}</div>`:''}
+    <div class="task-footer">
+      <div class="task-due ${d.cls}">${d.text}</div>
+      <div class="task-actions">
+        <button class="action-btn" onclick="event.stopPropagation();cycleStatus(${t.id})">↻</button>
+        <button class="action-btn delete" onclick="event.stopPropagation();deleteTask(${t.id})">🗑</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function taskRowHTML(t) {
+  return `<div class="task-row" onclick="openEditTask(${t.id})">
+    <div class="task-row-check ${t.status==='done'?'done':''}" onclick="event.stopPropagation();toggleDone(${t.id})">${t.status==='done'?'✓':''}</div>
+    <div class="task-row-title ${t.status==='done'?'done':''}">${escHtml(t.title)}</div>
+    <div class="task-priority priority-${t.priority}" style="margin:0">${t.priority}</div>
+    <div class="status-badge status-${t.status}">${t.status==='inprogress'?'In Progress':t.status==='done'?'Done':'To Do'}</div>
+    <button class="action-btn delete" onclick="event.stopPropagation();deleteTask(${t.id})">🗑</button>
+  </div>`;
+}
+
+function dueMeta(due) {
+  if (!due) return {text:'No due date',cls:''};
+  const d=new Date(due), now=new Date(); now.setHours(0,0,0,0);
+  const diff=Math.round((d-now)/86400000);
+  if (diff<0) return {text:`${Math.abs(diff)}d overdue`,cls:'overdue'};
+  if (diff===0) return {text:'Due today',cls:'soon'};
+  if (diff<=2) return {text:`Due in ${diff}d`,cls:'soon'};
+  return {text:d.toLocaleDateString('en-US',{month:'short',day:'numeric'}),cls:''};
+}
+
+function openNewTask() {
+  editingId=null;
+  ['t-title','t-desc'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('t-priority').value='medium';
+  document.getElementById('t-status').value='todo';
+  document.getElementById('t-due').value='';
+  document.getElementById('modal-title').textContent='New Task';
+  document.getElementById('task-modal').classList.add('open');
+}
+
+function openEditTask(id) {
+  const t=tasks.find(t=>t.id===id); if(!t) return;
+  editingId=id;
+  document.getElementById('modal-title').textContent='Edit Task';
+  document.getElementById('t-title').value=t.title;
+  document.getElementById('t-desc').value=t.desc||'';
+  document.getElementById('t-priority').value=t.priority;
+  document.getElementById('t-status').value=t.status;
+  document.getElementById('t-due').value=t.due||'';
+  document.getElementById('task-modal').classList.add('open');
+}
+
+function closeModal() { document.getElementById('task-modal').classList.remove('open'); }
+
+function saveTask() {
+  const title=document.getElementById('t-title').value.trim();
+  if (!title) { showToast('Task title is required','error'); return; }
+  const data = { title, desc:document.getElementById('t-desc').value.trim(), priority:document.getElementById('t-priority').value, status:document.getElementById('t-status').value, due:document.getElementById('t-due').value };
+  if (editingId) { Object.assign(tasks.find(t=>t.id===editingId), data); showToast('Task updated ✓','success'); }
+  else { tasks.push({id:Date.now(),userId:currentUser.id,...data,createdAt:new Date().toISOString()}); showToast('Task created ✓','success'); }
+  saveTasks(); closeModal();
+  currentNav==='dashboard' ? renderDashboard() : renderTasksView(currentNav);
+}
+
+function deleteTask(id) {
+  tasks=tasks.filter(t=>t.id!==id); saveTasks(); showToast('Task deleted','info');
+  currentNav==='dashboard' ? renderDashboard() : renderTasksView(currentNav);
+}
+
+function toggleDone(id) {
+  const t=tasks.find(t=>t.id===id); if(!t) return;
+  t.status=t.status==='done'?'todo':'done'; saveTasks();
+  currentNav==='dashboard' ? renderDashboard() : renderTasksView(currentNav);
+}
+
+function cycleStatus(id) {
+  const t=tasks.find(t=>t.id===id); if(!t) return;
+  t.status={todo:'inprogress',inprogress:'done',done:'todo'}[t.status];
+  saveTasks(); showToast('Status updated','info'); renderTasksView(currentNav);
+}
+
+function setFilter(val,el) {
+  activeFilter=val;
+  document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active'); renderTasksView(currentNav);
+}
+
+function setSearch(val) { searchQuery=val.toLowerCase(); renderTasksView(currentNav); }
+
+function setView(v) {
+  boardView=v;
+  document.getElementById('vbtn-kanban').classList.toggle('active',v==='kanban');
+  document.getElementById('vbtn-list').classList.toggle('active',v==='list');
+  renderTasksView(currentNav);
+}
+
+function updateBadges() {
+  document.getElementById('badge-tasks').textContent=tasks.filter(t=>t.status!=='done').length;
+  document.getElementById('badge-inprogress').textContent=tasks.filter(t=>t.status==='inprogress').length;
+}
+
+function openSidebar() { document.getElementById('sidebar').classList.add('open'); document.getElementById('sidebar-overlay').classList.add('open'); }
+function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebar-overlay').classList.remove('open'); }
+
+function showToast(msg,type='info') {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className=`show ${type}`;
+  setTimeout(()=>t.className='',2800);
+}
+
+function escHtml(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function addSampleTasks() {
+  const samples = [
+    {title:'Set up Django project structure',desc:'Initialize app, configure settings and database',priority:'high',status:'done',due:''},
+    {title:'Build REST API endpoints',desc:'CRUD endpoints using Django REST Framework',priority:'high',status:'inprogress',due:new Date(Date.now()+2*86400000).toISOString().split('T')[0]},
+    {title:'Implement JWT authentication',desc:'Login, register, token refresh endpoints',priority:'high',status:'inprogress',due:new Date(Date.now()+3*86400000).toISOString().split('T')[0]},
+    {title:'Connect frontend to Django API',desc:'Replace localStorage with real API calls',priority:'medium',status:'todo',due:new Date(Date.now()+5*86400000).toISOString().split('T')[0]},
+    {title:'Add WebSocket real-time updates',desc:'Django Channels for live task sync',priority:'low',status:'todo',due:new Date(Date.now()+7*86400000).toISOString().split('T')[0]},
+  ];
+  tasks=samples.map((t,i)=>({...t,id:Date.now()+i,userId:currentUser.id,createdAt:new Date().toISOString()}));
+  saveTasks();
+}
+
+// INIT
+renderAuthFields();
+if (currentUser) loginUser(currentUser);
+document.getElementById('task-modal').addEventListener('click',function(e){ if(e.target===this) closeModal(); });
+</script>
+</body>
+</html>
